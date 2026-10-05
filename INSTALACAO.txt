@@ -1,0 +1,13 @@
+1. Substitua os arquivos do projeto pelos arquivos desta pasta.
+2. No terminal, na raiz do projeto, instale o AsyncStorage com:
+
+npx expo install @react-native-async-storage/async-storage
+
+3. Inicie o app:
+
+npx expo start -c
+
+4. Teste celular e tablet.
+5. Depois confira `git status` e faça os commits/branches/issues conforme GITHUB_ISSUES.md.
+
+Observação: o GitHub consultado ainda está com Expo 54 no package.json. Não troquei a versão do Expo neste pacote para não sobrescrever uma eventual atualização para Expo 57 que já esteja na sua cópia local. O comando `npx expo install` escolhe uma versão compatível com a versão do Expo instalada no projeto.
