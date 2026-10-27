@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Ponto } from '../types/Ponto';
+import { Ponto } from '../types/ponto';
 import { FavoritoButton } from './FavoritoButton';
 
 type PontoItemProps = {
@@ -10,12 +10,7 @@ type PontoItemProps = {
   onToggleFavorito: () => void;
 };
 
-export function PontoItem({
-  ponto,
-  favorito,
-  onPress,
-  onToggleFavorito,
-}: PontoItemProps) {
+export function PontoItem({ ponto, favorito, onPress, onToggleFavorito }: PontoItemProps) {
   return (
     <View style={styles.item}>
       <Pressable style={styles.conteudo} onPress={onPress}>
@@ -24,7 +19,6 @@ export function PontoItem({
         <Text style={styles.itemHorario}>{ponto.horario}</Text>
         <Text style={styles.itemAcao}>Ver detalhes →</Text>
       </Pressable>
-
       <FavoritoButton favorito={favorito} onPress={onToggleFavorito} />
     </View>
   );
