@@ -1,84 +1,84 @@
 package br.com.maoa.instituto.api.controller;
 
-import br.com.maoa.instituto.api.dto.PontoPageResponse;
-import br.com.maoa.instituto.api.dto.PontoResponse;
-import br.com.maoa.instituto.api.entity.Ponto;
+import br.com.maoa.instituto.api.dto.PontoRequestDTO;
+import br.com.maoa.instituto.api.dto.PontoResponseDTO;
 import br.com.maoa.instituto.api.service.PontoService;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/pontos")
+@RequestMapping("/api/v1/pontos")
 @CrossOrigin(origins = "*")
 public class PontoController {
-    private static final int TAMANHO_PADRAO = 20;
-    private static final int TAMANHO_MAXIMO = 50;
-    private static final String ORDENACAO_PADRAO = "nome,asc";
-    private static final java.util.Set<String> CAMPOS_ORDENAVEIS = java.util.Set.of(
-            "id", "nome", "endereco", "horario", "recebeDistribui", "latitude", "longitude"
-    );
-
     private final PontoService service;
 
     public PontoController(PontoService service) {
         this.service = service;
     }
 
+    // Lista os pontos em páginas, já convertidos para DTO.
     @GetMapping
-    public PontoPageResponse listar(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = ORDENACAO_PADRAO) String sort
+    @Operation(summary = "Lista os pontos com paginação")
+    public Page<PontoResponseDTO> listar(
+            @RequestParam(required = false) String filtro,
+            @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        if (page < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A página não pode ser negativa.");
-        }
-        if (size < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O tamanho da página deve ser maior que zero.");
-        }
-
-        int tamanho = Math.min(size, TAMANHO_MAXIMO);
-        Pageable pageable = PageRequest.of(page, tamanho, criarOrdenacao(sort));
-        Page<PontoResponse> resultado = service.listar(pageable).map(PontoResponse::from);
-        PontoPageResponse.PageInfo informacoes = new PontoPageResponse.PageInfo(
-                resultado.getNumber(),
-                resultado.getSize(),
-                resultado.getTotalElements(),
-                resultado.getTotalPages()
-        );
-        return new PontoPageResponse(resultado.getContent(), informacoes);
+        validarPagina(pageable);
+        return service.listar(filtro, pageable).map(PontoResponseDTO::from);
     }
 
+    // Pesquisa por nome ou bairro, sem diferenciar maiúsculas.
+    @GetMapping("/filtro")
+    @Operation(summary = "Busca pontos pelo nome ou bairro com paginação")
+    public Page<PontoResponseDTO> filtrar(
+            @RequestParam(required = false) String filtro,
+            @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        validarPagina(pageable);
+        return service.listar(filtro, pageable).map(PontoResponseDTO::from);
+    }
+
+    // Busca um ponto pelo UUID.
     @GetMapping("/{id}")
-    public PontoResponse buscarPorId(@PathVariable Long id) {
-        Ponto ponto = service.buscarPorId(id);
-        return PontoResponse.from(ponto);
+    @Operation(summary = "Busca um ponto pelo UUID")
+    public PontoResponseDTO buscar(@PathVariable UUID id) {
+        return PontoResponseDTO.from(service.buscarPorId(id));
     }
 
-    private Sort criarOrdenacao(String sort) {
-        String[] partes = sort.split(",", 2);
-        String campo = partes[0].trim();
-        if (!CAMPOS_ORDENAVEIS.contains(campo)) {
-            campo = "nome";
+    // Valida e cadastra um ponto novo.
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Cadastra um ponto")
+    public PontoResponseDTO cadastrar(@Valid @RequestBody PontoRequestDTO dados) {
+        return PontoResponseDTO.from(service.cadastrar(dados));
+    }
+
+    // Atualiza um ponto existente.
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualiza um ponto")
+    public PontoResponseDTO editar(@PathVariable UUID id, @Valid @RequestBody PontoRequestDTO dados) {
+        return PontoResponseDTO.from(service.editar(id, dados));
+    }
+
+    // Exclui um ponto ou devolve 404 se não existir.
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Exclui um ponto")
+    public void excluir(@PathVariable UUID id) {
+        service.excluir(id);
+    }
+
+    private void validarPagina(Pageable pageable) {
+        if (pageable.getPageSize() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O tamanho máximo da página é 50.");
         }
-        Sort.Direction direcao = Sort.Direction.ASC;
-        if (partes.length > 1) {
-            try {
-                direcao = Sort.Direction.fromString(partes[1].trim());
-            } catch (IllegalArgumentException ignored) {
-                direcao = Sort.Direction.ASC;
-            }
-        }
-        return Sort.by(direcao, campo);
     }
 }

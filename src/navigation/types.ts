@@ -1,10 +1,11 @@
 import { Doacao } from '../types/Doacao';
-import { Ponto } from '../types/ponto';
 
 export type RootStackParamList = {
   ListaPontos: undefined;
-  DetalhePonto: { id: number };
-  NovaDoacao: { doacao?: Doacao } | undefined;
+  FormularioPonto: { id?: string } | undefined;
+  DetalhePonto: { id: string };
+  MeusPontos: undefined;
+  NovaDoacao: { id?: string } | undefined;
   MinhasDoacoes: undefined;
-  DetalheDoacao: { doacao: Doacao };
+  DetalheDoacao: { id: string };
 };
