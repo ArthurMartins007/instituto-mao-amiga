@@ -5,3 +5,5 @@ export type Doacao = {
   pontoDestino: string;
   criadoEm: string;
 };
+
+export type DoacaoRequest = Pick<Doacao, 'tipoItem' | 'quantidade' | 'pontoDestino'>;

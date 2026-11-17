@@ -1,25 +1,37 @@
-import { apiGet } from './api';
-import { PaginaPontos, Ponto } from '../types/ponto';
+import { apiDel, apiGet, apiPost, apiPut } from './api';
+import { Pagina, Ponto, PontoRequest } from '../types/ponto';
 
-const TAMANHO_PAGINA = 50;
+const TAMANHO_PAGINA = 10;
 
-export async function listarPontos(): Promise<Ponto[]> {
-  const pontos: Ponto[] = [];
-  let pagina = 0;
-  let totalPaginas = 1;
+// Busca uma página de pontos. O filtro fica no servidor, não na tela.
+export function buscarPaginaPontos(pagina: number, filtro: string): Promise<Pagina<Ponto>> {
+  const parametros = new URLSearchParams({
+    page: String(pagina),
+    size: String(TAMANHO_PAGINA),
+    sort: 'nome,asc',
+  });
 
-  while (pagina < totalPaginas) {
-    const resposta = await apiGet<PaginaPontos>(
-      `/pontos?page=${pagina}&size=${TAMANHO_PAGINA}&sort=nome,asc`,
-    );
-    pontos.push(...resposta.content);
-    totalPaginas = resposta.page.totalPages;
-    pagina += 1;
-  }
+  if (filtro.trim()) parametros.set('filtro', filtro.trim());
 
-  return pontos;
+  return apiGet<Pagina<Ponto>>(`/pontos/filtro?${parametros.toString()}`);
 }
 
-export function buscarPontoPorId(id: number): Promise<Ponto> {
+// Busca um ponto específico para abrir o detalhe ou editar.
+export function buscarPontoPorId(id: string): Promise<Ponto> {
   return apiGet<Ponto>(`/pontos/${id}`);
+}
+
+// Cria um ponto novo.
+export function cadastrarPonto(dados: PontoRequest): Promise<Ponto> {
+  return apiPost<Ponto>('/pontos', dados);
+}
+
+// Atualiza os dados de um ponto.
+export function editarPonto(id: string, dados: PontoRequest): Promise<Ponto> {
+  return apiPut<Ponto>(`/pontos/${id}`, dados);
+}
+
+// Remove um ponto da API.
+export function excluirPonto(id: string): Promise<void> {
+  return apiDel(`/pontos/${id}`);
 }
